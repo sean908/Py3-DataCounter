@@ -7,12 +7,13 @@ from collections import Counter
 import argparse
 
 
-def read_data_from_directory(raw_data_dir):
+def read_data_from_directory(raw_data_dir, ignore_case=False):
     """
     从raw_data目录读取所有文件，返回统计结果
 
     Args:
         raw_data_dir (str): 数据目录路径
+        ignore_case (bool): 是否忽略大小写
 
     Returns:
         Counter: 所有value的计数器
@@ -61,7 +62,9 @@ def read_data_from_directory(raw_data_dir):
                 for raw_value in raw_values:
                     clean_value = raw_value.strip()
                     if clean_value:  # 忽略空字符串
-                        file_values.add(clean_value)
+                        # 根据ignore_case参数决定是否转换大小写
+                        processed_value = clean_value.lower() if ignore_case else clean_value
+                        file_values.add(processed_value)
 
                 # 更新全局计数器
                 for value in file_values:
@@ -141,12 +144,13 @@ def generate_chart(value_counter, output_file='value_counts.png', top_n=None):
     plt.show()
 
 
-def print_statistics(value_counter):
+def print_statistics(value_counter, ignore_case=False):
     """
     打印统计信息到控制台
 
     Args:
         value_counter (Counter): 计数器对象
+        ignore_case (bool): 是否忽略了大小写
     """
     if not value_counter:
         print("没有统计数据")
@@ -154,6 +158,10 @@ def print_statistics(value_counter):
 
     print(f"\n{'='*50}")
     print("统计信息")
+    if ignore_case:
+        print("模式：大小写不敏感")
+    else:
+        print("模式：区分大小写")
     print(f"{'='*50}")
     print(f"唯一值总数：{len(value_counter)}")
     print(f"总计数：{sum(value_counter.values())}")
@@ -182,21 +190,27 @@ def main():
                        help='只显示前N个最频繁的值 (默认: 显示全部)')
     parser.add_argument('--no-chart', action='store_true',
                        help='不生成图表，只显示统计信息')
+    parser.add_argument('--ignore-case', '-i', action='store_true',
+                       help='忽略大小写进行统计')
 
     args = parser.parse_args()
 
     print("数据计数和可视化工具")
     print("=" * 50)
+    if args.ignore_case:
+        print("运行模式：大小写不敏感")
+    else:
+        print("运行模式：区分大小写")
 
     # 读取数据
-    value_counter = read_data_from_directory(args.data_dir)
+    value_counter = read_data_from_directory(args.data_dir, args.ignore_case)
 
     if not value_counter:
         print("没有找到任何数据")
         return
 
     # 打印统计信息
-    print_statistics(value_counter)
+    print_statistics(value_counter, args.ignore_case)
 
     # 生成图表（除非用户指定不要图表）
     if not args.no_chart:
